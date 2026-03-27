@@ -1,0 +1,1 @@
+from qara.cli import app
