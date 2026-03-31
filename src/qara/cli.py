@@ -131,6 +131,78 @@ def history(last: int = typer.Option(20, "--last", "-n")) -> None:
     console.print(table)
 
 
+@app.command()
+def install(
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print what would be done without doint it"),
+) -> None:
+    """Install qara as a system service (auto-start at login)"""
+    from qara.platform.detector import Platform, detect
+    from qara.platform import systemd, launchd, windows_scm
+
+    platform = detect()
+
+    if dry_run:
+        if platform == Platform.LINUX:
+            from qara.platform.systemd import _unit_content, _unit_path
+            typer.echo(f"Would write: {_unit_path()}\n\n{_unit_content()}")
+        elif platform == Platform.MACOS:
+            from qara.platform.launchd import _plist_content, _plist_path
+            typer.echo(f"Would write: {_plist_path()}\n\n{_plist_content()}")
+        else:
+            typer.echo(f"Platform {platform} dry-run not supported.")
+        return
+
+    _load_config_or_exit() # validate config exists before installing
+
+    if platform == Platform.LINUX:
+        if systemd.is_installed():
+            typer.echo("Service already installed. Use `qara uninstall` first to reinstall.")
+            raise typer.Exit(1)
+        systemd.install()
+        typer.echo("✓ qara installed as a systemd user service.")
+        typer.echo("  It will start automatically at login.")
+        typer.echo("  Check status with: systemctl --user status qara")
+
+    elif platform == Platform.MACOS:
+        if launchd.is_installed():
+            typer.echo("Service already installed. Use `qara uninstall` first to reinstall.")
+            raise typer.Exit(1)
+        launchd.install()
+        typer.echo("✓ qara installed as a launchd user agent.")
+        typer.echo("  It will start automatically at login.")
+
+    else:
+        typer.echo(f"[error] Unsupported platform: {platform}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
+def uninstall() -> None:
+    """Remove qara from system services."""
+    from qara.platform.detector import Platform, detect
+    from qara.platform import systemd, launchd, windows_scm
+
+    platform = detect()
+
+    if platform == Platform.LINUX:
+        if not systemd.is_installed():
+            typer.echo("qara is not installed as a service.")
+            raise typer.Exit(1)
+        systemd.uninstall()
+        typer.echo("✓ qara service removed.")
+
+    elif platform == Platform.MACOS:
+        if not launchd.is_installed():
+            typer.echo("qara is not installed as a service.")
+            raise typer.Exit(1)
+        launchd.uninstall()
+        typer.echo("✓ qara service removed.")
+
+    else:
+        typer.echo(f"[error] Unsupported platform: {platform}", err=True)
+        raise typer.Exit(1)
+
+
 # ---------------------------------------------------------------------------
 # Daemon commands
 # ---------------------------------------------------------------------------
