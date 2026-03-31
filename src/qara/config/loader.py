@@ -13,6 +13,9 @@ def log_path() -> Path:
     return user_log_path("qara") / "runs.jsonl"
 
 def socket_path() -> Path:
+    return user_runtime_path("qara") / "daemon.sock"
+
+def pid_file_path() -> Path:
     return user_runtime_path("qara") / "daemon.pid"
 
 def load_config(path: Path | None = None) -> QaraConfig:
