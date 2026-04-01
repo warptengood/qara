@@ -8,7 +8,7 @@ from qara.config.schema import QaraConfig
 from qara.core.bus import NotificationBus
 from qara.core.command_handler import CommandHandler
 from qara.core.event_engine import EventEngine
-from qara.core.events import BaseEvent, ProcessCrashed, ProcessFinished
+from qara.core.events import BaseEvent, ProcessCrashed, ProcessFinished, ProcessStarted
 from qara.core.registry import WatcherRegistry
 from qara.core.watcher import ProcessWatcher
 from qara.storage import log as storage
@@ -28,6 +28,18 @@ class Daemon:
         self.telegram = TelegramChannel(config.telegram, self.cmd)
 
         self.bus.register(self.telegram)
+
+        # Plugins subscribe to the engine directly — they receive ALL events
+        # including StdoutLine/StderrLine (needed for loss parsing).
+        # Subscribed before the bus so on_finish metrics send before cleanup.
+        from qara.plugins import load_plugins
+        self._plugins = load_plugins(config.plugins.enabled)
+        for plugin in self._plugins:
+            plugin_cfg = config.plugins.model_dump().get(plugin.name, {})
+            if plugin_cfg:
+                plugin.configure(plugin_cfg)
+        self.engine.subscribe(self._plugin_handler)
+
         self.engine.subscribe(self.bus.on_event)
         self.engine.subscribe(self._persist_and_cleanup)
 
@@ -46,6 +58,25 @@ class Daemon:
             "finished_at": event.timestamp.isoformat(),
         }
         await asyncio.get_running_loop().run_in_executor(None, storage.append_run, record)
+
+    async def _plugin_handler(self, event: BaseEvent) -> None:
+        if not self._plugins:
+            return
+        if isinstance(event, ProcessStarted):
+            for plugin in self._plugins:
+                await plugin.on_start(event.pid, event.name)
+        for plugin in self._plugins:
+            await plugin.on_event(event)
+        if isinstance(event, (ProcessFinished, ProcessCrashed)):
+            for plugin in self._plugins:
+                metrics = await plugin.on_finish(event.pid)
+                if metrics:
+                    import html
+                    lines = [f"📊 <b>{html.escape(plugin.name)} summary</b>"]
+                    for k, v in metrics.items():
+                        lines.append(f"{html.escape(k)}:\n{html.escape(v)}")
+                    await self.telegram.send_text("\n\n".join(lines))
+
 
     async def _handle_ipc(self, request: dict[str, object]) -> dict[str, object]:
         req_id = request.get("id", "")
@@ -130,6 +161,9 @@ class Daemon:
         pid_file.parent.mkdir(parents=True, exist_ok=True)
         pid_file.write_text(str(os.getpid()))
 
+        for plugin in self._plugins:
+            await plugin.setup()
+
         await self.telegram.start()
         await self._ipc.start()
         logger.info("Daemon started (PID %s)", os.getpid())
@@ -153,4 +187,8 @@ class Daemon:
                 await asyncio.gather(*watcher_tasks, return_exceptions=True)
             await self._ipc.stop()
             await self.telegram.stop()
+
+            for plugin in self._plugins:
+                await plugin.teardown()
+
             logger.info("Daemon stopped.")

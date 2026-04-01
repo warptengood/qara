@@ -60,7 +60,7 @@ def _run_ipc(action: str, params: dict | None = None) -> dict:
 # Process commands
 # ---------------------------------------------------------------------------
 
-@app.command()
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def run(
     argv: list[str] = typer.Argument(..., help="Command and arguments to run"),
     name: str = typer.Option("", "--name", "-n", help="Human label for this process"),

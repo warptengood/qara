@@ -77,11 +77,15 @@ class ProcessWatcher:
 
         await self._engine.publish(ProcessStarted(pid=self.pid, name=self.name, argv=self.argv))
 
+        # Drain stdout and stderr fully before waiting for exit.
+        # This guarantees all StdoutLine/StderrLine events are published
+        # before ProcessFinished/ProcessCrashed — critical for plugins that
+        # accumulate per-line data (e.g. loss tracking).
         await asyncio.gather(
             self._stream_stdout(),
             self._stream_stderr(),
-            self._wait_for_exit(),
         )
+        await self._publish_exit()
 
     async def _stream_stdout(self) -> None:
         assert self._process and self._process.stdout
@@ -100,10 +104,13 @@ class ProcessWatcher:
             assert self.pid is not None
             await self._engine.publish(StderrLine(pid=self.pid, name=self.name, text=line))
 
-    async def _wait_for_exit(self) -> None:
+    async def _publish_exit(self) -> None:
         assert self._process
-        await self._process.wait()
         exit_code = self._process.returncode
+        if exit_code is None:
+            # streams EOF'd but process hasn't exited yet — wait for it
+            await self._process.wait()
+            exit_code = self._process.returncode
         duration = time.monotonic() - (self._start_time or 0)
         assert self.pid is not None
 

@@ -174,6 +174,16 @@ class TelegramChannel(BaseChannel):
             except Exception:
                 logger.exception("Failed to send Telegram message to user %s", user_id)
 
+    async def send_text(self, text: str) -> None:
+        """Send a raw HTML text message to all allowed users."""
+        if not self._bot:
+            return
+        for user_id in self._config.allowed_user_ids:
+            try:
+                await self._bot.send_message(chat_id=user_id, text=text)
+            except Exception:
+                logger.exception("Failed to send message to user %s", user_id)
+
     def _format(self, event: BaseEvent) -> str | None:
         n = self._config.notifications
         name = html.escape(event.name)
