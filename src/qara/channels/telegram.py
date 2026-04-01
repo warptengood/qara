@@ -163,16 +163,9 @@ class TelegramChannel(BaseChannel):
         await self._dp.start_polling(self._bot)
 
     async def send(self, event: BaseEvent) -> None:
-        if not self._bot:
-            return
         text = self._format(event)
-        if text is None:
-            return
-        for user_id in self._config.allowed_user_ids:
-            try:
-                await self._bot.send_message(chat_id=user_id, text=text)
-            except Exception:
-                logger.exception("Failed to send Telegram message to user %s", user_id)
+        if text is not None:
+            await self.send_text(text)
 
     async def send_text(self, text: str) -> None:
         """Send a raw HTML text message to all allowed users."""

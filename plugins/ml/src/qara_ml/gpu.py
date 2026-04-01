@@ -10,19 +10,24 @@ class GPUTracker:
     def __init__(self) -> None:
         self._available = False
         self._handles: list = []
+        self._vram_total_mb: float = 0.0
         self._poll_interval: int = 5
         self._tasks: dict[int, asyncio.Task] = {}
         self._metrics: dict[int, dict] = {}
-    
+
     def configure(self, poll_interval: int) -> None:
         self._poll_interval = poll_interval
-    
+
     async def init(self) -> None:
         try:
             import pynvml # type: ignore[import]
             pynvml.nvmlInit()
             count = pynvml.nvmlDeviceGetCount()
             self._handles = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(count)]
+            self._vram_total_mb = sum(
+                pynvml.nvmlDeviceGetMemoryInfo(h).total / (1024 * 1024)
+                for h in self._handles
+            )
             self._available = True
             logger.info("GPU tracking enabled (%d device(s))", count)
         except Exception:
@@ -61,25 +66,14 @@ class GPUTracker:
         if not m or m["samples"] == 0:
             return {}
         avg_util = m["util_sum"] / m["samples"]
-        total_vram_mb = self._total_vram_mb()
         return {
             "GPU summary": (
-                f"Peak VRAM: {m['peak_vram_mb']:.0f} MB / {total_vram_mb:0f} MB\n"
+                f"Peak VRAM: {m['peak_vram_mb']:.0f} MB / {self._vram_total_mb:.0f} MB\n"
                 f"Avg GPU util: {avg_util:.0f}%\n"
                 f"Peak temp: {m['peak_temp']}°C"
             )
         }
     
-    def _total_vram_mb(self) -> float:
-        if not self._handles:
-            return 0.0
-        try:
-            import pynvml # type: ignore[import]
-            info = pynvml.nvmlDeviceGetMemoryInfo(self._handles[0])
-            return info.total / (1024 * 1024)
-        except Exception:
-            return 0.0
-        
     async def _poll(self, pid: int) -> None:
         try:
             import pynvml # type: ignore[import]

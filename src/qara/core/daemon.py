@@ -1,4 +1,5 @@
 import asyncio
+import html
 import logging
 import os
 
@@ -71,7 +72,6 @@ class Daemon:
             for plugin in self._plugins:
                 metrics = await plugin.on_finish(event.pid)
                 if metrics:
-                    import html
                     lines = [f"📊 <b>{html.escape(plugin.name)} summary</b>"]
                     for k, v in metrics.items():
                         lines.append(f"{html.escape(k)}:\n{html.escape(v)}")

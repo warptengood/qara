@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_plugins(enabled: list[str]) -> list[BasePlugin]:
-    """Load plguns registered under the `qara.plugins` entry point group."""
+    """Load plugins registered under the `qara.plugins` entry point group."""
     if not enabled:
         return []
     
