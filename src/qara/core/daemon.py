@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import html
 import logging
 import os
@@ -34,6 +35,7 @@ class Daemon:
         # including StdoutLine/StderrLine (needed for loss parsing).
         # Subscribed before the bus so on_finish metrics send before cleanup.
         from qara.plugins import load_plugins
+
         self._plugins = load_plugins(config.plugins.enabled)
         for plugin in self._plugins:
             plugin_cfg = config.plugins.model_dump().get(plugin.name, {})
@@ -77,11 +79,11 @@ class Daemon:
                         lines.append(f"{html.escape(k)}:\n{html.escape(v)}")
                     await self.telegram.send_text("\n\n".join(lines))
 
-
     async def _handle_ipc(self, request: dict[str, object]) -> dict[str, object]:
         req_id = request.get("id", "")
         action = str(request.get("action", ""))
-        params = dict(request.get("params", {}))  # type: ignore[arg-type]
+        raw_params = request.get("params")
+        params: dict[str, object] = raw_params if isinstance(raw_params, dict) else {}
 
         if action == "run":
             result = await self._ipc_run(params)
@@ -176,10 +178,8 @@ class Daemon:
             pass
         finally:
             logger.info("Daemon shutting down...")
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 pid_file.unlink()
-            except FileNotFoundError:
-                pass
             watcher_tasks = [e.task for e in self.registry.all_entries()]
             for t in watcher_tasks:
                 t.cancel()

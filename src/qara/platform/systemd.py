@@ -1,7 +1,7 @@
+import contextlib
 import subprocess
 import sys
 from pathlib import Path
-
 
 from qara.config.loader import config_path
 
@@ -49,10 +49,8 @@ def uninstall() -> None:
     subprocess.run(["systemctl", "--user", "disable", "qara"], check=False)
 
     unit = _unit_path()
-    try:
+    with contextlib.suppress(FileNotFoundError):
         unit.unlink()
-    except FileNotFoundError:
-        pass
 
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
 

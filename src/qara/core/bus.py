@@ -17,8 +17,8 @@ class NotificationBus:
 
     async def on_event(self, event: BaseEvent) -> None:
         if isinstance(event, _INTERNAL_EVENTS):
-            return # never forwarded to channels
-        
+            return  # never forwarded to channels
+
         for channel in self._channels:
             try:
                 await channel.send(event)

@@ -1,3 +1,4 @@
+import contextlib
 import os
 import subprocess
 import sys
@@ -66,11 +67,8 @@ def uninstall() -> None:
         ["launchctl", "bootout", f"gui/{uid}", _LABEL],
         check=False,
     )
-
-    try:
+    with contextlib.suppress(FileNotFoundError):
         _plist_path().unlink()
-    except FileNotFoundError:
-        pass
 
 
 def is_installed() -> bool:

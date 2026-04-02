@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 
@@ -12,7 +11,7 @@ Handler = Callable[[BaseEvent], Awaitable[None]]
 class EventEngine:
     def __init__(self) -> None:
         self._handlers: list[Handler] = []
-    
+
     def subscribe(self, handler: Handler) -> None:
         """Register an async handler to receive all events."""
         self._handlers.append(handler)
@@ -28,4 +27,3 @@ class EventEngine:
                     handler,
                     event,
                 )
-            

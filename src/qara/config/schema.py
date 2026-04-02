@@ -2,6 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+
 class DaemonConfig(BaseModel):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     socket_path: str = ""
@@ -20,9 +21,10 @@ class TelegramConfig(BaseModel):
     allowed_user_ids: list[int]
     notifications: TelegramNotificationsConfig = TelegramNotificationsConfig()
 
+
 class CommandsConfig(BaseModel):
     enabled: list[str] = ["status", "kill", "restart"]
-    allowed_scripts: dict[str, str] = {} # alias -> absolute path
+    allowed_scripts: dict[str, str] = {}  # alias -> absolute path
     kill_timeout_seconds: int = 10
 
 

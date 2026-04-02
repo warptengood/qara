@@ -111,12 +111,15 @@ class ProcessWatcher:
             # streams EOF'd but process hasn't exited yet — wait for it
             await self._process.wait()
             exit_code = self._process.returncode
+            assert exit_code is not None  # guaranteed after wait()
         duration = time.monotonic() - (self._start_time or 0)
         assert self.pid is not None
 
         if exit_code == 0:
             await self._engine.publish(
-                ProcessFinished(pid=self.pid, name=self.name, exit_code=exit_code, duration_seconds=duration)
+                ProcessFinished(
+                    pid=self.pid, name=self.name, exit_code=exit_code, duration_seconds=duration
+                )
             )
         else:
             stderr_tail = "\n".join(self._stderr_lines[-20:])
@@ -144,7 +147,12 @@ class ProcessWatcher:
 
         if not psutil.pid_exists(pid):
             await self._engine.publish(
-                ProcessCrashed(pid=pid, name=self.name, exit_code=-1, stderr_tail="PID not found at attach time")
+                ProcessCrashed(
+                    pid=pid,
+                    name=self.name,
+                    exit_code=-1,
+                    stderr_tail="PID not found at attach time",
+                )
             )
             return
 

@@ -1,6 +1,7 @@
 import html
 import logging
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any, cast
 
 from aiogram import BaseMiddleware, Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
@@ -32,12 +33,12 @@ class AuthMiddleware(BaseMiddleware):
     def __init__(self, allowed_ids: list[int]) -> None:
         self._allowed = frozenset(allowed_ids)
 
-    async def __call__(
+    async def __call__(  # type: ignore[override]
         self,
         handler: Callable[[Message, dict[str, Any]], Awaitable[Any]],
         event: Message,
         data: dict[str, Any],
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401
         if event.from_user and event.from_user.id not in self._allowed:
             logger.warning("Unauthorized Telegram access from user_id=%s", event.from_user.id)
             return  # silently ignore — no response prevents enumeration
@@ -61,8 +62,7 @@ class TelegramChannel(BaseChannel):
         @router.message(Command("start"))
         async def start_cmd(msg: Message) -> None:
             await msg.answer(
-                "👋 <b>qara</b> is watching your processes.\n\n"
-                "Commands: /status /history /help",
+                "👋 <b>qara</b> is watching your processes.\n\nCommands: /status /history /help",
             )
 
         @router.message(Command("status"))
@@ -71,13 +71,13 @@ class TelegramChannel(BaseChannel):
             if not result["ok"]:
                 await msg.answer(f"❌ {result['error']}")
                 return
-            entries = result["data"]
+            entries = cast(list[dict[str, object]], result["data"])
             if not entries:
                 await msg.answer("No processes currently watched.")
                 return
-            lines = [f"<b>PID</b>  <b>Name</b>  <b>Mode</b>"]
+            lines = ["<b>PID</b>  <b>Name</b>  <b>Mode</b>"]
             for e in entries:
-                lines.append(f"{e['pid']}  {html.escape(e['name'])}  {e['mode']}")
+                lines.append(f"{e['pid']}  {html.escape(str(e['name']))}  {e['mode']}")
             await msg.answer("\n".join(lines))
 
         @router.message(Command("kill"))
@@ -89,7 +89,7 @@ class TelegramChannel(BaseChannel):
             pid_or_name = parts[1].strip()
             result = await cmd.handle("kill", {"name": pid_or_name})
             if result["ok"]:
-                data = result["data"]
+                data = cast(dict[str, object], result["data"])
                 await msg.answer(f"✅ Killed {data['pid']} via {data['signal']}")
             else:
                 await msg.answer(f"❌ {result['error']}")
@@ -102,7 +102,7 @@ class TelegramChannel(BaseChannel):
             if not result["ok"]:
                 await msg.answer(f"❌ {result['error']}")
                 return
-            runs = result["data"]
+            runs = cast(list[dict[str, object]], result["data"])
             if not runs:
                 await msg.answer("No runs recorded yet.")
                 return
@@ -128,7 +128,7 @@ class TelegramChannel(BaseChannel):
             if not result["ok"]:
                 await msg.answer(f"❌ {result['error']}")
                 return
-            lines = result["data"]
+            lines = cast(list[str], result["data"])
             text = "\n".join(lines) if lines else "(no output)"
             await msg.answer(f"<pre>{html.escape(text)}</pre>")
 
@@ -206,7 +206,6 @@ class TelegramChannel(BaseChannel):
                 f"Name: {name}\n"
                 f"PID: {event.pid}\n"
                 f"Exit code: {event.exit_code}\n"
-                f"Duration: {_fmt_duration(event.duration_seconds)}"
-                + stderr
+                f"Duration: {_fmt_duration(event.duration_seconds)}" + stderr
             )
         return None

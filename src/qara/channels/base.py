@@ -13,7 +13,6 @@ class BaseChannel(ABC):
     @abstractmethod
     async def stop(self) -> None: ...
 
-    async def receive_command(self, command: str, params: dict[str, object]) -> None:
+    async def receive_command(self, command: str, params: dict[str, object]) -> None:  # noqa: B027
         """Override in Phase 3 to handle inbound commands from this channel."""
-
-    
+        pass

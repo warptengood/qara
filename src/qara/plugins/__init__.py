@@ -10,7 +10,7 @@ def load_plugins(enabled: list[str]) -> list[BasePlugin]:
     """Load plugins registered under the `qara.plugins` entry point group."""
     if not enabled:
         return []
-    
+
     eps = {ep.name: ep for ep in entry_points(group="qara.plugins")}
     plugins: list[BasePlugin] = []
 
@@ -25,5 +25,5 @@ def load_plugins(enabled: list[str]) -> list[BasePlugin]:
             logger.info("Loaded plugin: %s", name)
         except Exception:
             logger.exception("Failed to load plugin '%s'", name)
-    
+
     return plugins

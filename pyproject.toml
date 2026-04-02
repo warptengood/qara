@@ -59,12 +59,15 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ANN"]
-ignore = ["ANN101", "ANN102"]
 
 [tool.mypy]
 python_version = "3.11"
 strict = true
 ignore_missing_imports = false
+
+[[tool.mypy.overrides]]
+module = ["psutil", "psutil.*", "win32serviceutil", "win32serviceutil.*", "pywintypes", "win32api"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

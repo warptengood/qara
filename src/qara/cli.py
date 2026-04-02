@@ -1,6 +1,8 @@
 import asyncio
+import json
 import logging
 import sys
+from typing import cast
 
 import typer
 from rich.console import Console
@@ -20,6 +22,10 @@ app.add_typer(config_app, name="config")
 console = Console()
 
 
+def _print_json(data: object) -> None:
+    typer.echo(json.dumps(data))
+
+
 def _setup_logging(level: str) -> None:
     logging.basicConfig(
         level=level,
@@ -31,45 +37,47 @@ def _setup_logging(level: str) -> None:
 
 def _load_config_or_exit() -> QaraConfig:
     from pydantic import ValidationError
+
     from qara.config.loader import config_path
+
     try:
         return load_config()
     except FileNotFoundError:
         typer.echo(
-            f"[error] Config not found: {config_path()}\n"
-            "Run `qara config init` to create one.",
+            f"[error] Config not found: {config_path()}\nRun `qara config init` to create one.",
             err=True,
         )
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except ValidationError as e:
         typer.echo(f"[error] Config is invalid:\n{e}", err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
-def _run_ipc(action: str, params: dict | None = None) -> dict:
-    cfg = _load_config_or_exit()
+def _run_ipc(action: str, params: dict[str, object] | None = None) -> dict[str, object]:
+    _load_config_or_exit()
     client = IPCClient(str(socket_path()))
     try:
         return asyncio.run(client.send(action, params))
     except RuntimeError as e:
         typer.echo(f"[error] {e}", err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 # ---------------------------------------------------------------------------
 # Process commands
 # ---------------------------------------------------------------------------
 
+
 @app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def run(
-    argv: list[str] = typer.Argument(..., help="Command and arguments to run"),
+    argv: list[str] = typer.Argument(..., help="Command and arguments to run"),  # noqa: B008
     name: str = typer.Option("", "--name", "-n", help="Human label for this process"),
 ) -> None:
     """Spawn a process via the daemon and watch it."""
     label = name or argv[0]
     result = _run_ipc("run", {"argv": argv, "name": label})
     if result.get("ok"):
-        data = result["data"]
+        data = cast(dict[str, object], result["data"])
         typer.echo(f"Watching PID {data['pid']} as '{data['name']}'")
     else:
         typer.echo(f"[error] {result.get('error')}", err=True)
@@ -92,30 +100,41 @@ def attach(
 
 
 @app.command()
-def status() -> None:
+def status(
+    format: str = typer.Option("text", "--format", "-f", help="Output format: text or json"),
+) -> None:
     """List all currently watched processes."""
     result = _run_ipc("status")
     if not result.get("ok"):
         typer.echo(f"[error] {result.get('error')}", err=True)
         raise typer.Exit(1)
-    entries = result["data"]
+    entries = cast(list[dict[str, object]], result["data"])
+    if format == "json":
+        _print_json(entries)
+        return
     if not entries:
         typer.echo("No processes currently watched.")
         return
     table = Table("PID", "Name", "Mode")
     for e in entries:
-        table.add_row(str(e["pid"]), e["name"], e["mode"])
+        table.add_row(str(e["pid"]), str(e["name"]), str(e["mode"]))
     console.print(table)
 
 
 @app.command()
-def history(last: int = typer.Option(20, "--last", "-n")) -> None:
+def history(
+    last: int = typer.Option(20, "--last", "-n"),
+    format: str = typer.Option("text", "--format", "-f", help="Output format: text or json"),
+) -> None:
     """Show recent completed runs."""
     result = _run_ipc("history", {"limit": last})
     if not result.get("ok"):
         typer.echo(f"[error] {result.get('error')}", err=True)
         raise typer.Exit(1)
-    runs = result["data"]
+    runs = cast(list[dict[str, object]], result["data"])
+    if format == "json":
+        _print_json(runs)
+        return
     if not runs:
         typer.echo("No runs recorded yet.")
         return
@@ -133,26 +152,28 @@ def history(last: int = typer.Option(20, "--last", "-n")) -> None:
 
 @app.command()
 def install(
-    dry_run: bool = typer.Option(False, "--dry-run", help="Print what would be done without doint it"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Run the command without running it"),
 ) -> None:
     """Install qara as a system service (auto-start at login)"""
+    from qara.platform import launchd, systemd, windows_scm  # noqa: F401
     from qara.platform.detector import Platform, detect
-    from qara.platform import systemd, launchd, windows_scm
 
     platform = detect()
 
     if dry_run:
         if platform == Platform.LINUX:
             from qara.platform.systemd import _unit_content, _unit_path
+
             typer.echo(f"Would write: {_unit_path()}\n\n{_unit_content()}")
         elif platform == Platform.MACOS:
             from qara.platform.launchd import _plist_content, _plist_path
+
             typer.echo(f"Would write: {_plist_path()}\n\n{_plist_content()}")
         else:
             typer.echo(f"Platform {platform} dry-run not supported.")
         return
 
-    _load_config_or_exit() # validate config exists before installing
+    _load_config_or_exit()  # validate config exists before installing
 
     if platform == Platform.LINUX:
         if systemd.is_installed():
@@ -179,8 +200,8 @@ def install(
 @app.command()
 def uninstall() -> None:
     """Remove qara from system services."""
+    from qara.platform import launchd, systemd, windows_scm  # noqa: F401
     from qara.platform.detector import Platform, detect
-    from qara.platform import systemd, launchd, windows_scm
 
     platform = detect()
 
@@ -207,9 +228,12 @@ def uninstall() -> None:
 # Daemon commands
 # ---------------------------------------------------------------------------
 
+
 @daemon_app.command("start")
 def daemon_start(
-    foreground: bool = typer.Option(False, "--foreground", help="Run in foreground (used by systemd/launchd)"),
+    foreground: bool = typer.Option(
+        False, "--foreground", help="Run in foreground (used by systemd/launchd)"
+    ),
 ) -> None:
     """Start the qara daemon."""
     cfg = _load_config_or_exit()
@@ -217,11 +241,13 @@ def daemon_start(
 
     if foreground:
         from qara.core.daemon import Daemon
+
         asyncio.run(Daemon(cfg).run_forever())
     else:
         import os
         import subprocess
         from pathlib import Path
+
         from platformdirs import user_log_path
 
         log_file = user_log_path("qara") / "daemon.log"
@@ -254,8 +280,11 @@ def daemon_stop() -> None:
     if not result.get("ok"):
         typer.echo("Daemon does not appear to be running.")
         raise typer.Exit(1)
-    import signal, os
+    import os
+    import signal
+
     from qara.config.loader import pid_file_path
+
     pid_file = pid_file_path()
     if not pid_file.exists():
         typer.echo("PID file not found.")
@@ -280,10 +309,12 @@ def daemon_status() -> None:
 # Config commands
 # ---------------------------------------------------------------------------
 
+
 @config_app.command("init")
 def config_init(force: bool = typer.Option(False, "--force")) -> None:
     """Create a default config.toml."""
     from qara.config.loader import config_path
+
     path = config_path()
     if path.exists() and not force:
         typer.echo(f"Config already exists: {path}\nUse --force to overwrite.")
@@ -322,6 +353,7 @@ enabled = []
 def config_path_cmd() -> None:
     """Print the config file path."""
     from qara.config.loader import config_path
+
     typer.echo(config_path())
 
 
