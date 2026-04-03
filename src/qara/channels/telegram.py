@@ -10,6 +10,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from qara.channels.base import BaseChannel
+from qara.channels.formatting import format_table
 from qara.config.schema import TelegramConfig
 from qara.core.command_handler import CommandHandler
 from qara.core.events import (
@@ -75,10 +76,11 @@ class TelegramChannel(BaseChannel):
             if not entries:
                 await msg.answer("No processes currently watched.")
                 return
-            lines = ["<b>PID</b>  <b>Name</b>  <b>Mode</b>"]
-            for e in entries:
-                lines.append(f"{e['pid']}  {html.escape(str(e['name']))}  {e['mode']}")
-            await msg.answer("\n".join(lines))
+            table = format_table(
+                ["PID", "Name", "Mode"],
+                [[str(e["pid"]), str(e["name"]), str(e["mode"])] for e in entries],
+            )
+            await msg.answer(f"📊 <b>Watched Processes</b>\n\n<pre>{html.escape(table)}</pre>")
 
         @router.message(Command("kill"))
         async def kill_cmd(msg: Message) -> None:
@@ -106,15 +108,19 @@ class TelegramChannel(BaseChannel):
             if not runs:
                 await msg.answer("No runs recorded yet.")
                 return
-            lines = []
-            for r in runs:
-                status = "✅" if r.get("exit_code") == 0 else "❌"
-                lines.append(
-                    f"{status} <b>{html.escape(str(r.get('name', '?')))}</b> "
-                    f"exit={r.get('exit_code')} "
-                    f"dur={r.get('duration_seconds', 0):.1f}s"
-                )
-            await msg.answer("\n".join(lines))
+            table = format_table(
+                ["Name", "Status", "Duration", "Finished"],
+                [
+                    [
+                        str(r.get("name", "?")),
+                        "✅" if r.get("exit_code") == 0 else "❌",
+                        f"{r.get('duration_seconds', 0):.1f}s",
+                        str(r.get("finished_at", ""))[:19],
+                    ]
+                    for r in runs
+                ],
+            )
+            await msg.answer(f"📜 <b>History</b>\n\n<pre>{html.escape(table)}</pre>")
 
         @router.message(Command("logs"))
         async def logs_cmd(msg: Message) -> None:
