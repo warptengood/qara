@@ -231,7 +231,7 @@ qara daemon start
 ## Development
 
 ```bash
-git clone https://github.com/yerassylkenes/qara
+git clone https://github.com/warptengood/qara
 cd qara
 uv sync --group dev
 
