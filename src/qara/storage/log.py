@@ -20,7 +20,7 @@ def append_run(record: dict[str, object]) -> None:
     Blocking. Must be dispatched via loop.run_in_executor - never called
     directly from async code. Thread-safe via module-level lock.
     """
-    with _lock:
+    with _lock:  # noqa: SIM117
         with _log_path().open("a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")
 

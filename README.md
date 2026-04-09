@@ -1,15 +1,19 @@
-<p align="center">
-  <!-- Replace with your actual logo when ready -->
-  <h1 align="center">qara</h1>
-  <p align="center">
-    <strong>Watch any process. Get notified on Telegram. Control it remotely.</strong>
-  </p>
-  <p align="center">
-    <a href="https://pypi.org/project/qara/"><img src="https://img.shields.io/pypi/v/qara?color=blue" alt="PyPI"></a>
-    <a href="https://pypi.org/project/qara/"><img src="https://img.shields.io/pypi/pyversions/qara" alt="Python"></a>
-    <a href="https://github.com/warptengood/qara/blob/main/LICENSE"><img src="https://img.shields.io/github/license/warptengood/qara" alt="License"></a>
-  </p>
-</p>
+<div align="center">
+  <img src="assets/banner.png" alt="qara banner" width="100%">
+</div>
+
+<div align="center">
+  <a href="https://pypi.org/project/qara/"><img src="https://img.shields.io/pypi/v/qara?color=blue&style=flat-square" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/qara/"><img src="https://img.shields.io/pypi/pyversions/qara?style=flat-square" alt="Python versions"></a>
+  <a href="https://github.com/warptengood/qara/blob/main/LICENSE"><img src="https://img.shields.io/github/license/warptengood/qara?style=flat-square" alt="License"></a>
+  <a href="https://github.com/warptengood/qara/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/warptengood/qara/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+</div>
+
+<br>
+
+<div align="center">
+  <strong>Watch any process. Get notified on Telegram. Control it remotely.</strong>
+</div>
 
 ---
 
