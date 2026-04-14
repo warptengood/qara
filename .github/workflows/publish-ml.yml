@@ -1,15 +1,14 @@
-name: Publish to PyPI
+name: Publish qara-ml to PyPI
 
 on:
   push:
     tags:
-      - "v*"
-      - "!v*-ml"
+      - "v*-ml"
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: pypi-ml
     permissions:
       id-token: write  # required for OIDC trusted publishing
       contents: read
@@ -21,31 +20,31 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: uv sync --group dev
-
       - name: Verify tag matches pyproject.toml version
+        working-directory: plugins/ml
         run: |
+          # Tag format: v0.1.0-ml → strip leading v and trailing -ml
           TAG="${GITHUB_REF_NAME#v}"
+          TAG="${TAG%-ml}"
           PKG_VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
           echo "Tag version:     $TAG"
           echo "Package version: $PKG_VERSION"
           if [ "$TAG" != "$PKG_VERSION" ]; then
-            echo "ERROR: Tag v$TAG does not match pyproject.toml version $PKG_VERSION"
+            echo "ERROR: Tag does not match pyproject.toml version $PKG_VERSION"
             exit 1
           fi
 
-      - name: Run tests
-        run: uv run pytest
-
       - name: Build
+        working-directory: plugins/ml
         run: uv build
 
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist/
+          name: dist-ml
+          path: plugins/ml/dist/
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: plugins/ml/dist/

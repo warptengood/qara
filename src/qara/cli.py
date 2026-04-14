@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import sys
+from pathlib import Path
 from typing import cast
 
 import typer
@@ -75,7 +76,7 @@ def run(
 ) -> None:
     """Spawn a process via the daemon and watch it."""
     label = name or argv[0]
-    result = _run_ipc("run", {"argv": argv, "name": label})
+    result = _run_ipc("run", {"argv": argv, "name": label, "cwd": str(Path.cwd())})
     if result.get("ok"):
         data = cast(dict[str, object], result["data"])
         typer.echo(f"Watching PID {data['pid']} as '{data['name']}'")

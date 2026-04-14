@@ -101,8 +101,10 @@ class Daemon:
         if not isinstance(argv, list) or not argv:
             return {"ok": False, "error": "argv must be a non-empty list"}
         name = str(params.get("name") or argv[0])
+        cwd_raw = params.get("cwd")
+        cwd = cwd_raw if isinstance(cwd_raw, str) else None
         try:
-            pid = await self._spawn(argv=argv, name=name)
+            pid = await self._spawn(argv=argv, name=name, cwd=cwd)
             return {"ok": True, "data": {"pid": pid, "name": name}}
         except ValueError as e:
             return {"ok": False, "error": str(e)}
@@ -127,17 +129,18 @@ class Daemon:
             return {"ok": False, "error": "Restart is only available for spawned processes"}
         argv = entry.watcher.argv
         name = entry.watcher.name
+        cwd = entry.watcher.cwd
         # Kill first, then re-spawn
         await self.cmd.handle("kill", {"pid": entry.watcher.pid})
         await asyncio.sleep(0.5)  # brief pause for cleanup
         try:
-            pid = await self._spawn(argv=argv, name=name)
+            pid = await self._spawn(argv=argv, name=name, cwd=cwd)
             return {"ok": True, "data": {"pid": pid, "name": name}}
         except ValueError as e:
             return {"ok": False, "error": str(e)}
 
-    async def _spawn(self, argv: list[str], name: str) -> int:
-        watcher = ProcessWatcher(engine=self.engine, name=name, argv=argv)
+    async def _spawn(self, argv: list[str], name: str, cwd: str | None = None) -> int:
+        watcher = ProcessWatcher(engine=self.engine, name=name, argv=argv, cwd=cwd)
         task = asyncio.create_task(watcher.run())
         await watcher._started.wait()  # wait until PID is set
         assert watcher.pid is not None

@@ -3,6 +3,25 @@
 All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-04-14
+
+### Added
+- `cwd` preserved when spawning processes — `qara run` now captures the working directory and restarts use the original launch directory
+- Unicode box-drawing table output for `/status` and `/history` Telegram commands
+- `qara-ml` plugin: PyPI metadata, classifiers, and README reference
+
+### Fixed
+- Thread safety bug in JSONL log: lock was not actually acquired when appending runs
+- `tail_runs` now correctly parses the first line of the log file (previously skipped when reading in reverse chunks)
+- `/history` Telegram command now shows ✅/❌ status icons instead of raw exit codes
+- `format_table` import moved to module level in `telegram.py`
+
+### Changed
+- Copyright holder updated to Yerassyl Kenes in LICENSE
+- GitHub Actions publish workflow excludes `v*-ml` tags (reserved for plugin releases)
+
+---
+
 ## [0.1.0] - 2026-04-01
 
 ### Added

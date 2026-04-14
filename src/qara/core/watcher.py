@@ -27,6 +27,7 @@ class ProcessWatcher:
         *,
         argv: list[str] | None = None,
         pid: int | None = None,
+        cwd: str | None = None,
     ) -> None:
         if argv is None and pid is None:
             raise ValueError("Provide either argv (spawn mode) or pid (attach mode)")
@@ -36,6 +37,7 @@ class ProcessWatcher:
         self._engine = engine
         self.name = name
         self.argv = argv or []
+        self.cwd = cwd
         self._attach_pid = pid
 
         self.pid: int | None = None
@@ -70,6 +72,7 @@ class ProcessWatcher:
             *self.argv,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            cwd=self.cwd,
         )
         self.pid = self._process.pid
         self._start_time = time.monotonic()
