@@ -42,13 +42,11 @@ qara run python train.py --name "gpt-finetune"
 ### Install
 
 ```bash
-pip install qara
+# Install globally (recommended)
+pipx install qara
 
-# Or with uv (recommended)
+# Or with uv
 uv pip install qara
-
-# With ML plugin (GPU metrics + loss tracking)
-pip install qara-ml
 ```
 
 ### Configure
@@ -175,35 +173,30 @@ gpu_poll_interval_seconds = 5
 loss_pattern = ""  # custom regex, leave empty for default
 ```
 
-## ML Plugin
+## Plugins
 
-The `qara-ml` plugin adds GPU monitoring and training loss tracking:
-
-```bash
-pip install qara-ml
-```
-
-Enable it in `config.toml`:
+qara's functionality can be extended through plugins. Plugins are installed separately and activated in `config.toml`:
 
 ```toml
 [plugins]
 enabled = ["ml"]
 ```
 
-After a training run finishes, you'll receive an additional summary:
+Plugins receive all events from the daemon (including per-line stdout/stderr) and can send their own Telegram summaries after a process finishes. New plugins can be distributed as standalone packages using Python's `importlib.metadata` entry points — no changes to qara core required.
 
+Currently available:
+
+### `qara-ml`
+
+GPU metrics and training loss tracking for ML practitioners. Reports peak VRAM usage, average GPU utilisation, peak temperature, final loss, and best loss over the run.
+
+```bash
+pip install qara-ml
 ```
-GPU summary:
-  Peak VRAM: 18204 MB / 24576 MB
-  Avg GPU util: 94%
-  Peak temp: 78°C
 
-Training summary:
-  Final loss: 0.0342
-  Best loss: 0.0298 (step 4200)
-```
+See [plugins/ml/README.md](plugins/ml/README.md) for full setup and configuration.
 
-The loss tracker matches common patterns like `loss=0.123`, `train_loss: 0.456`, etc. You can provide a custom regex via `loss_pattern` in the config.
+> More plugins coming in future releases.
 
 ## Architecture
 
