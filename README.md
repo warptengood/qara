@@ -28,6 +28,10 @@ qara run python train.py --name "gpt-finetune"
 # => Telegram: "Process 'gpt-finetune' finished (exit 0, 3h 42m)"
 ```
 
+<div align="center">
+  <img src="docs/screenshots/process-attach.png" alt="Telegram notifications for an attached process" width="320">
+</div>
+
 ## Features
 
 - **Spawn or attach** &mdash; start a new process with `qara run` or monitor an existing one with `qara attach <pid>`
@@ -117,6 +121,10 @@ Once the daemon is running, send these commands to your bot:
 | `/kill <name>` | Send SIGTERM to a process (escalates to SIGKILL) |
 | `/history` | Show recent completed runs |
 | `/logs <name>` | Get last N lines of stdout |
+
+<div align="center">
+  <img src="docs/screenshots/telegram-commands.png" alt="Telegram /logs and /kill commands in action" width="320">
+</div>
 
 ### Daemon management
 

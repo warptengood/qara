@@ -27,16 +27,9 @@ loss_pattern = ""               # custom regex, leave empty for default
 
 After each watched process finishes, qara sends an additional Telegram summary:
 
-```
-GPU summary:
-  Peak VRAM: 18204 MB / 24576 MB
-  Avg GPU util: 94%
-  Peak temp: 78°C
-
-Training summary:
-  Final loss: 0.0342
-  Best loss: 0.0298 (step 4200)
-```
+<div align="center">
+  <img src="docs/screenshots/ml-plugin.png" alt="qara-ml GPU summary in Telegram" width="320">
+</div>
 
 **GPU metrics** — polls all NVIDIA GPUs every `gpu_poll_interval_seconds` and reports peak VRAM usage, average utilisation, and peak temperature over the lifetime of the process.
 
