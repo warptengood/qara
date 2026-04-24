@@ -9,7 +9,6 @@ from qara.config.loader import load_config
 from qara.config.schema import (
     CommandsConfig,
     DaemonConfig,
-    MLPluginConfig,
     PluginsConfig,
     QaraConfig,
     TelegramConfig,
@@ -135,7 +134,6 @@ def test_telegram_notifications_defaults() -> None:
 def test_plugins_config_defaults() -> None:
     cfg = PluginsConfig()
     assert cfg.enabled == []
-    assert isinstance(cfg.ml, MLPluginConfig)
 
 
 def test_telegram_config_requires_bot_token() -> None:
