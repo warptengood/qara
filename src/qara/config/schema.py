@@ -28,15 +28,8 @@ class CommandsConfig(BaseModel):
     kill_timeout_seconds: int = 10
 
 
-class MLPluginConfig(BaseModel):
-    gpu_poll_interval_seconds: int = 5
-    report_on_finish: bool = True
-    loss_pattern: str = ""
-
-
 class PluginsConfig(BaseModel):
     enabled: list[str] = []
-    ml: MLPluginConfig = MLPluginConfig()
 
 
 class QaraConfig(BaseModel):

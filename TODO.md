@@ -6,7 +6,6 @@ Items are grouped by area. Check them off as they're done.
 
 ## Installation & Distribution
 
-- [ ] **Publish `qara-ml` to PyPI** — workflow ready (`publish-ml.yml`), triggered by `v0.1.0-ml` tag. Before first publish: set up Trusted Publishing on PyPI for `qara-ml` under the `pypi-ml` GitHub environment (same steps as `qara`, but for the `qara-ml` package name)
 - [ ] **`qara install` UX clarity** — users don't understand what it does. After running it:
   - Print a clear explanation: "qara is now registered as a user service. It will start automatically when you log in. You don't need to run `qara daemon start` manually anymore."
   - Print the next step: "Start it now with: `systemctl --user start qara`" (Linux) or `launchctl start com.qara.daemon` (macOS)
@@ -28,15 +27,6 @@ Items are grouped by area. Check them off as they're done.
 - [ ] **Discord channel** — send notifications to a Discord webhook; reuse `format_table()` from `channels/formatting.py` with triple-backtick wrapping
 - [ ] **Slack channel** — webhook-based; same pattern
 - [ ] **stdout tail in finish notification** — include last N lines of stdout in the "process finished" Telegram message (config: `stdout_tail_lines`)
-
----
-
-## ML Plugin (`qara-ml`)
-
-- [ ] **Publish to PyPI** as a separate package (see Distribution above)
-- [ ] **Per-GPU breakdown** — report metrics per device, not just aggregated, when multiple GPUs are present
-- [ ] **Wandb / MLflow integration** — link to the run URL in the finish notification if detected in env vars
-- [ ] **Epoch detection** — parse epoch number from stdout alongside loss
 
 ---
 

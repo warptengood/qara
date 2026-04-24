@@ -37,7 +37,6 @@ qara run python train.py --name "gpt-finetune"
 - **Spawn or attach** &mdash; start a new process with `qara run` or monitor an existing one with `qara attach <pid>`
 - **Telegram notifications** &mdash; get notified on start, finish, and crash with configurable stdout tail
 - **Remote control** &mdash; send `/status`, `/kill`, `/history`, `/logs` from Telegram
-- **Plugin system** &mdash; extend with plugins via entry points (e.g. `qara-ml` for GPU metrics and loss tracking)
 - **Daemon mode** &mdash; runs as a user-level service (systemd, launchd) &mdash; no root required
 - **JSON output** &mdash; `--format json` on `status` and `history` for scripting
 
@@ -172,39 +171,7 @@ kill_timeout_seconds = 10
 
 [commands.allowed_scripts]
 # alias = "/absolute/path/to/script.py"
-
-[plugins]
-enabled = ["ml"]
-
-[plugins.ml]
-gpu_poll_interval_seconds = 5
-loss_pattern = ""  # custom regex, leave empty for default
 ```
-
-## Plugins
-
-qara's functionality can be extended through plugins. Plugins are installed separately and activated in `config.toml`:
-
-```toml
-[plugins]
-enabled = ["ml"]
-```
-
-Plugins receive all events from the daemon (including per-line stdout/stderr) and can send their own Telegram summaries after a process finishes. New plugins can be distributed as standalone packages using Python's `importlib.metadata` entry points — no changes to qara core required.
-
-Currently available:
-
-### `qara-ml`
-
-GPU metrics and training loss tracking for ML practitioners. Reports peak VRAM usage, average GPU utilisation, peak temperature, final loss, and best loss over the run.
-
-```bash
-pip install qara-ml
-```
-
-See [plugins/ml/README.md](plugins/ml/README.md) for full setup and configuration.
-
-> More plugins coming in future releases.
 
 ## Architecture
 

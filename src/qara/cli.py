@@ -341,9 +341,6 @@ enabled = ["status", "kill", "restart"]
 
 [commands.allowed_scripts]
 # eval = "/home/user/scripts/eval.py"
-
-[plugins]
-enabled = []
 """,
         encoding="utf-8",
     )
